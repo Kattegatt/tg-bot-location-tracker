@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: community_map_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: community_map
+    ports:
+      - "5432:5432"
+    volumes:
+      - community_map_data:/var/lib/postgresql/data
+
+volumes:
+  community_map_data:

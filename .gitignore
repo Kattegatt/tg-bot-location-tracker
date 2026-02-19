@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+
+# build artifacts
+dist/
+coverage/
+*.tsbuildinfo
+
+# env files
+.env
+apps/*/.env
+packages/*/.env
+!.env.example
+!apps/*/.env.example
+!packages/*/.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# temp/editor/system
+.DS_Store
+.idea/
+.vscode/
+.tmp/
+tmp/
+
+# vite/vitest caches
+.vite/
+
+SPEC.md

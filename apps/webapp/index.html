@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Community Map</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div>
+          <h1>Community Map</h1>
+          <p>Active points expire after 5 hours.</p>
+        </div>
+        <button id="refresh">Refresh</button>
+      </header>
+      <main>
+        <section id="map"></section>
+        <aside id="panel">
+          <h2>Comments</h2>
+          <p id="panel-status">Select a marker to view comments.</p>
+          <div id="comments"></div>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

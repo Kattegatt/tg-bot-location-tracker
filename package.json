@@ -1,0 +1,22 @@
+{
+    "name": "community-map-bot",
+    "private": true,
+    "packageManager": "npm@10",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "concurrently -n api,bot,webapp -c auto \"npm -w apps/api run dev\" \"npm -w apps/bot run dev\" \"npm -w apps/webapp run dev\"",
+        "build": "npm -ws run build",
+        "lint": "npm -ws run lint",
+        "format": "npm -ws run format",
+        "test": "npm -ws run test",
+        "db:up": "docker compose -f docker/docker-compose.yml up -d",
+        "db:down": "docker compose -f docker/docker-compose.yml down",
+        "db:migrate": "npm -w apps/api run db:migrate"
+    },
+    "devDependencies": {
+        "concurrently": "^9.0.0"
+    }
+}
