@@ -47,6 +47,8 @@ services:
       BOT_API_TOKEN: ${BOT_API_TOKEN}
       WEBAPP_URL: https://${APP_DOMAIN:-app.communitymap.website}
       WEBAPP_CACHE_BUST: ${WEBAPP_CACHE_BUST:-1}
+      DONATE_MONO_CARD: ${DONATE_MONO_CARD:-}
+      DONATE_CRYPTO_WALLET: ${DONATE_CRYPTO_WALLET:-}
       LOG_LEVEL: info
     depends_on:
       - api
