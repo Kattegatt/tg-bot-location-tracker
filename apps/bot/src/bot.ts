@@ -6,6 +6,7 @@ const botToken = process.env.BOT_TOKEN;
 const apiUrl = process.env.API_URL || "http://localhost:3001";
 const botApiToken = process.env.BOT_API_TOKEN || "";
 const webappUrl = process.env.WEBAPP_URL || "";
+const webappCacheBust = process.env.WEBAPP_CACHE_BUST || String(Date.now());
 
 if (!botToken) {
   console.warn("BOT_TOKEN is not set. Bot is idle.");
@@ -47,6 +48,19 @@ if (!botToken) {
     return { ok: response.ok, status: response.status, data };
   }
 
+  function buildWebAppLaunchUrl(): string {
+    if (!webappUrl) return "";
+
+    try {
+      const url = new URL(webappUrl);
+      url.searchParams.set("v", webappCacheBust);
+      return url.toString();
+    } catch {
+      const separator = webappUrl.includes("?") ? "&" : "?";
+      return `${webappUrl}${separator}v=${encodeURIComponent(webappCacheBust)}`;
+    }
+  }
+
   bot.start(async (ctx) => {
     const userId = ctx.from?.id;
     if (userId) {
@@ -59,10 +73,12 @@ if (!botToken) {
   });
 
   bot.command("map", (ctx) => {
-    if (webappUrl) {
+    const launchUrl = buildWebAppLaunchUrl();
+
+    if (launchUrl) {
       ctx.reply(
         "Open the community map:",
-        Markup.inlineKeyboard([Markup.button.webApp("Open map", webappUrl)]),
+        Markup.inlineKeyboard([Markup.button.webApp("Open map", launchUrl)]),
       );
     } else {
       ctx.reply("WebApp URL is not configured.");

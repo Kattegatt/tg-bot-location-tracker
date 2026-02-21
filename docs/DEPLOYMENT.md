@@ -34,6 +34,7 @@ Set real values in `.env.prod`:
 - `INITDATA_MAX_AGE_SECONDS`
 - optionally override `APP_DOMAIN`, `API_DOMAIN`
 - optional `VITE_API_URL` (otherwise frontend build uses `https://${API_DOMAIN}`)
+- optional `WEBAPP_CACHE_BUST` (normally set automatically by `deploy.sh`)
 
 Never commit `.env.prod`.
 
@@ -57,6 +58,9 @@ By default `deploy.sh` deploys `master`. You can override:
 ```bash
 DEPLOY_BRANCH=main ./deploy.sh
 ```
+
+`deploy.sh` automatically exports `WEBAPP_CACHE_BUST` from current git commit hash.
+This helps Telegram WebView pick up fresh frontend builds instead of stale cached pages.
 
 ## 7. Useful Commands
 ```bash

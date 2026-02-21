@@ -13,6 +13,7 @@ git reset --hard "origin/${DEPLOY_BRANCH}"
 
 ./build-webapp.sh
 
+export WEBAPP_CACHE_BUST="$(git rev-parse --short HEAD)"
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 
 # Optional, non-blocking migration step.
