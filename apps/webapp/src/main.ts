@@ -7,11 +7,24 @@ declare global {
     Telegram?: {
       WebApp?: {
         initData?: string;
+        safeAreaInset?: {
+          top?: number;
+          bottom?: number;
+          left?: number;
+          right?: number;
+        };
+        contentSafeAreaInset?: {
+          top?: number;
+          bottom?: number;
+          left?: number;
+          right?: number;
+        };
         initDataUnsafe?: {
           user?: {
             language_code?: string;
           };
         };
+        onEvent?: (eventType: string, eventHandler: (...args: unknown[]) => void) => void;
         ready?: () => void;
         expand?: () => void;
       };
@@ -134,6 +147,28 @@ const relativeTimeFormatter = new Intl.RelativeTimeFormat(uiLocale === "uk" ? "u
   numeric: "auto"
 });
 
+function readInsetValue(value: number | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+  return value;
+}
+
+function applyTelegramTopInset() {
+  if (!telegramWebApp) {
+    return;
+  }
+
+  const safeTop = readInsetValue(telegramWebApp.safeAreaInset?.top);
+  const contentSafeTop = readInsetValue(telegramWebApp.contentSafeAreaInset?.top);
+  const reportedTop = Math.max(safeTop, contentSafeTop);
+  const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const mobileFallbackTop = window.innerWidth <= 900 ? (isIOSDevice ? 72 : 56) : 0;
+  const effectiveTop = Math.max(reportedTop, mobileFallbackTop);
+
+  document.documentElement.style.setProperty("--tg-runtime-safe-top", `${effectiveTop}px`);
+}
+
 const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
 const pageTitle = document.getElementById("page-title") as HTMLHeadingElement | null;
 const panelTitle = document.getElementById("panel-title") as HTMLHeadingElement | null;
@@ -160,6 +195,14 @@ if (legendSection) {
 refreshButton.textContent = uiTexts.refresh;
 document.title = uiTexts.pageTitle;
 document.documentElement.lang = uiLocale === "uk" ? "uk" : "en";
+if (telegramWebApp) {
+  document.documentElement.classList.add("is-telegram-webapp");
+  applyTelegramTopInset();
+  window.addEventListener("resize", applyTelegramTopInset);
+  telegramWebApp.onEvent?.("viewportChanged", applyTelegramTopInset);
+  telegramWebApp.onEvent?.("safeAreaChanged", applyTelegramTopInset);
+  telegramWebApp.onEvent?.("contentSafeAreaChanged", applyTelegramTopInset);
+}
 
 if (telegramWebApp?.ready) {
   telegramWebApp.ready();

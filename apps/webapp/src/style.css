@@ -4,7 +4,8 @@
   --safe-top: max(
     env(safe-area-inset-top, 0px),
     var(--tg-safe-area-inset-top, 0px),
-    var(--tg-content-safe-area-inset-top, 0px)
+    var(--tg-content-safe-area-inset-top, 0px),
+    var(--tg-runtime-safe-top, 0px)
   );
   color-scheme: light;
   font-family: "Space Grotesk", system-ui, sans-serif;
