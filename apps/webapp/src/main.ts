@@ -6,6 +6,7 @@ declare global {
     Telegram?: {
       WebApp?: {
         initData?: string;
+        ready?: () => void;
         expand?: () => void;
       };
     };
@@ -33,13 +34,18 @@ const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
 const panelStatus = document.getElementById("panel-status") as HTMLParagraphElement;
 const commentsContainer = document.getElementById("comments") as HTMLDivElement;
 
+const telegramWebApp = window.Telegram?.WebApp;
+if (telegramWebApp?.ready) {
+  telegramWebApp.ready();
+}
+
 const map = L.map("map").setView([50.4501, 30.5234], 12);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
 }).addTo(map);
 
-if (window.Telegram?.WebApp?.expand) {
-  window.Telegram.WebApp.expand();
+if (telegramWebApp?.expand) {
+  telegramWebApp.expand();
 }
 
 navigator.geolocation?.getCurrentPosition(
@@ -61,6 +67,11 @@ function ttlColor(expiresAt: string) {
 }
 
 async function fetchPoints() {
+  if (!initData) {
+    panelStatus.textContent = "Open this map from Telegram bot to load points.";
+    return;
+  }
+
   const response = await fetch(`${apiUrl}/points`, {
     headers: initData ? { "x-telegram-init-data": initData } : {}
   });
