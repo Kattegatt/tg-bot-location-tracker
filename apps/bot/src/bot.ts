@@ -71,7 +71,7 @@ const TEXTS: Record<Locale, BotTexts> = {
     helpStep2: "Бот створить або оновить найближчу точку на мапі.",
     helpStep3: (maxChars, maxWords) =>
       `Після локації є 2 хвилини, щоб додати коментар (до ${maxChars} символів, до ${maxWords} слів).`,
-    helpStep4: "Команда /map відкриває інтерактивну мапу.",
+    helpStep4: "Кнопка OPEN такКоманда /map відкриває інтерактивну мапу.",
     helpDonationTitle: "Підтримка сервісу:",
     helpDonationJoke:
       "Сервер не працює на ентузіазмі, а ентузіазм не оплачує хостинг.",
@@ -107,7 +107,7 @@ const TEXTS: Record<Locale, BotTexts> = {
     helpStep2: "The bot creates or refreshes the nearest map point.",
     helpStep3: (maxChars, maxWords) =>
       `After sending location, you have 2 minutes to add a comment (up to ${maxChars} chars, up to ${maxWords} words).`,
-    helpStep4: "Use /map to open the interactive map.",
+    helpStep4: "Use OPEN button or /map to open the interactive map.",
     helpDonationTitle: "Support the service:",
     helpDonationJoke:
       "The server does not run on vibes, and vibes do not pay hosting.",
