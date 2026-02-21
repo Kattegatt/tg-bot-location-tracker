@@ -16,7 +16,15 @@ await app.register(cors, {
 });
 
 app.addHook("preHandler", async (request, reply) => {
-  if (request.url.startsWith("/health") || request.url.startsWith("/admin")) return;
+  const path = request.url.split("?")[0];
+  const isPublicReadRoute =
+    request.method === "GET" &&
+    (path === "/points" || /^\/points\/[^/]+\/comments$/.test(path));
+
+  if (path.startsWith("/health") || path.startsWith("/admin") || isPublicReadRoute) {
+    return;
+  }
+
   const result = await authenticate(request, reply);
   if (!result) return reply;
   request.userId = result.userId;

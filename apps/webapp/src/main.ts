@@ -28,7 +28,6 @@ function resolveDefaultApiUrl(): string {
 
 const apiUrl = import.meta.env.VITE_API_URL || resolveDefaultApiUrl();
 const devInitData = import.meta.env.VITE_DEV_INIT_DATA as string | undefined;
-const initData = window.Telegram?.WebApp?.initData || devInitData || "";
 
 const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
 const panelStatus = document.getElementById("panel-status") as HTMLParagraphElement;
@@ -57,6 +56,26 @@ navigator.geolocation?.getCurrentPosition(
 
 const markers = new Map<number, any>();
 
+function getInitData(): string {
+  return window.Telegram?.WebApp?.initData || devInitData || "";
+}
+
+type ApiError = {
+  error?: string;
+};
+
+async function fetchApi(path: string): Promise<Response> {
+  const initData = getInitData();
+  return fetch(`${apiUrl}${path}`, {
+    headers: initData ? { "x-telegram-init-data": initData } : {}
+  });
+}
+
+async function readApiError(response: Response): Promise<string> {
+  const data = (await response.json().catch(() => ({}))) as ApiError;
+  return data.error || `HTTP ${response.status}`;
+}
+
 function ttlColor(expiresAt: string) {
   const expires = new Date(expiresAt).getTime();
   const remaining = expires - Date.now();
@@ -67,17 +86,12 @@ function ttlColor(expiresAt: string) {
 }
 
 async function fetchPoints() {
-  if (!initData) {
-    panelStatus.textContent = "Open this map from Telegram bot to load points.";
-    return;
-  }
-
-  const response = await fetch(`${apiUrl}/points`, {
-    headers: initData ? { "x-telegram-init-data": initData } : {}
-  });
+  panelStatus.textContent = "Loading points...";
+  const response = await fetchApi("/points");
 
   if (!response.ok) {
-    panelStatus.textContent = "Unable to load points. Check access.";
+    const message = await readApiError(response);
+    panelStatus.textContent = `Unable to load points (${message}).`;
     return;
   }
 
@@ -133,18 +147,18 @@ async function fetchPoints() {
       markers.delete(id);
     }
   }
+  panelStatus.textContent = points.length === 0 ? "No active points yet." : "";
 }
 
 async function loadComments(pointId: number) {
   panelStatus.textContent = "Loading comments...";
   commentsContainer.innerHTML = "";
 
-  const response = await fetch(`${apiUrl}/points/${pointId}/comments`, {
-    headers: initData ? { "x-telegram-init-data": initData } : {}
-  });
+  const response = await fetchApi(`/points/${pointId}/comments`);
 
   if (!response.ok) {
-    panelStatus.textContent = "Unable to load comments.";
+    const message = await readApiError(response);
+    panelStatus.textContent = `Unable to load comments (${message}).`;
     return;
   }
 
@@ -170,5 +184,12 @@ async function loadComments(pointId: number) {
 
 refreshButton.addEventListener("click", () => fetchPoints());
 
-fetchPoints();
-setInterval(fetchPoints, 45_000);
+fetchPoints().catch((error) => {
+  panelStatus.textContent = "Unable to load points.";
+  console.error("Failed to fetch points", error);
+});
+setInterval(() => {
+  fetchPoints().catch((error) => {
+    console.error("Periodic points refresh failed", error);
+  });
+}, 45_000);
