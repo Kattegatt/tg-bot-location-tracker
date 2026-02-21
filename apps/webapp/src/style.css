@@ -72,21 +72,79 @@ main {
 
 #panel h2 {
   margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.legend {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f5f7fd;
+}
+
+.legend-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #42506f;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4b556f;
+  margin-bottom: 4px;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot-fresh {
+  background: #16a34a;
+}
+
+.legend-dot-mid {
+  background: #f59e0b;
+}
+
+.legend-dot-expiring {
+  background: #ef4444;
+}
+
+#panel-status {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+#comments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .comment {
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 6px 8px;
+  border-radius: 10px;
   background: #f4f6fb;
-  margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.25;
 }
 
 .comment time {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   color: #6b7280;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 @media (max-width: 900px) {

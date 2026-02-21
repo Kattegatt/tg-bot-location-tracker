@@ -32,6 +32,7 @@ const devInitData = import.meta.env.VITE_DEV_INIT_DATA as string | undefined;
 const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
 const panelStatus = document.getElementById("panel-status") as HTMLParagraphElement;
 const commentsContainer = document.getElementById("comments") as HTMLDivElement;
+const defaultPanelStatus = "Select a marker to view comments.";
 
 const telegramWebApp = window.Telegram?.WebApp;
 if (telegramWebApp?.ready) {
@@ -55,6 +56,8 @@ navigator.geolocation?.getCurrentPosition(
 );
 
 const markers = new Map<number, any>();
+let selectedPointId: number | null = null;
+commentsContainer.hidden = true;
 
 function getInitData(): string {
   return window.Telegram?.WebApp?.initData || devInitData || "";
@@ -83,6 +86,36 @@ function ttlColor(expiresAt: string) {
   if (ratio > 0.66) return "#16a34a";
   if (ratio > 0.33) return "#f59e0b";
   return "#ef4444";
+}
+
+function formatElapsed(isoDate: string): string {
+  const timestamp = new Date(isoDate).getTime();
+  if (!Number.isFinite(timestamp)) return "unknown";
+
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return "just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} d ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} mo ago`;
+
+  const years = Math.floor(days / 365);
+  return `${years} y ago`;
+}
+
+function clearCommentsPanel() {
+  selectedPointId = null;
+  commentsContainer.hidden = true;
+  commentsContainer.innerHTML = "";
+  panelStatus.textContent = defaultPanelStatus;
 }
 
 async function fetchPoints() {
@@ -122,20 +155,28 @@ async function fetchPoints() {
         fillOpacity: 0.9
       }).addTo(map);
       markers.set(point.id, marker);
+      marker.on("popupclose", () => {
+        if (selectedPointId === point.id) {
+          clearCommentsPanel();
+        }
+      });
     } else {
       marker.setStyle({ color, fillColor: color });
     }
 
     const popupContent = document.createElement("div");
     popupContent.innerHTML = `
-      <strong>Created:</strong> ${new Date(point.created_at).toLocaleString()}<br />
-      <strong>Updated:</strong> ${new Date(point.last_refreshed_at).toLocaleString()}<br />
+      <strong>Created:</strong> ${formatElapsed(point.created_at)}<br />
+      <strong>Updated:</strong> ${formatElapsed(point.last_refreshed_at)}<br />
       <strong>Comments:</strong> ${point.comments_count}<br />
     `;
     const button = document.createElement("button");
     button.textContent = "Show comments";
     button.style.marginTop = "8px";
-    button.onclick = () => loadComments(point.id);
+    button.onclick = () => {
+      selectedPointId = point.id;
+      loadComments(point.id);
+    };
     popupContent.appendChild(button);
 
     marker.bindPopup(popupContent);
@@ -147,14 +188,31 @@ async function fetchPoints() {
       markers.delete(id);
     }
   }
-  panelStatus.textContent = points.length === 0 ? "No active points yet." : "";
+
+  if (selectedPointId !== null && !seen.has(selectedPointId)) {
+    clearCommentsPanel();
+  }
+
+  if (points.length === 0) {
+    panelStatus.textContent = "No active points yet.";
+    return;
+  }
+
+  if (selectedPointId === null) {
+    panelStatus.textContent = defaultPanelStatus;
+  }
 }
 
 async function loadComments(pointId: number) {
+  const requestedPointId = pointId;
   panelStatus.textContent = "Loading comments...";
-  commentsContainer.innerHTML = "";
+  commentsContainer.hidden = false;
+  commentsContainer.replaceChildren();
 
   const response = await fetchApi(`/points/${pointId}/comments`);
+  if (selectedPointId !== requestedPointId) {
+    return;
+  }
 
   if (!response.ok) {
     const message = await readApiError(response);
@@ -164,6 +222,9 @@ async function loadComments(pointId: number) {
 
   const data = await response.json();
   const comments = data.comments as Array<{ id: number; body: string; created_at: string }>;
+  if (selectedPointId !== requestedPointId) {
+    return;
+  }
 
   if (comments.length === 0) {
     panelStatus.textContent = "No comments yet.";
@@ -175,7 +236,7 @@ async function loadComments(pointId: number) {
     const div = document.createElement("div");
     div.className = "comment";
     div.innerHTML = `
-      <time>${new Date(comment.created_at).toLocaleString()}</time>
+      <time>${formatElapsed(comment.created_at)}</time>
       <div>${comment.body}</div>
     `;
     commentsContainer.appendChild(div);

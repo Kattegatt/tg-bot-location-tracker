@@ -18,6 +18,21 @@
         <section id="map"></section>
         <aside id="panel">
           <h2>Comments</h2>
+          <section class="legend" aria-label="Point color legend">
+            <p class="legend-title">Point status by color</p>
+            <div class="legend-item">
+              <span class="legend-dot legend-dot-fresh"></span>
+              <span>Fresh update (more time left)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot legend-dot-mid"></span>
+              <span>Mid lifetime</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot legend-dot-expiring"></span>
+              <span>Expiring soon</span>
+            </div>
+          </section>
           <p id="panel-status">Select a marker to view comments.</p>
           <div id="comments"></div>
         </aside>
