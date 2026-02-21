@@ -7,6 +7,11 @@ declare global {
     Telegram?: {
       WebApp?: {
         initData?: string;
+        initDataUnsafe?: {
+          user?: {
+            language_code?: string;
+          };
+        };
         ready?: () => void;
         expand?: () => void;
       };
@@ -30,18 +35,132 @@ function resolveDefaultApiUrl(): string {
 const apiUrl = import.meta.env.VITE_API_URL || resolveDefaultApiUrl();
 const devInitData = import.meta.env.VITE_DEV_INIT_DATA as string | undefined;
 
+type UiLocale = "uk" | "en";
+
+type UiTextSet = {
+  pageTitle: string;
+  panelTitle: string;
+  refresh: string;
+  defaultPanelStatus: string;
+  loadingPoints: string;
+  unableToLoadPoints: (message: string) => string;
+  networkError: string;
+  noActivePoints: string;
+  loadingComments: string;
+  unableToLoadComments: (message: string) => string;
+  noComments: string;
+  popupCreated: string;
+  popupUpdated: string;
+  popupComments: string;
+  popupShowComments: string;
+  legendAriaLabel: string;
+  legendGreen: (maxAge: string) => string;
+  legendOrange: (fromAge: string, toAge: string) => string;
+  legendRed: (fromAge: string, toAge: string) => string;
+  justNow: string;
+  unknown: string;
+};
+
+const uiTextsByLocale: Record<UiLocale, UiTextSet> = {
+  uk: {
+    pageTitle: "Community Map",
+    panelTitle: "Коментарі",
+    refresh: "Оновити",
+    defaultPanelStatus: "Оберіть точку, щоб переглянути коментарі.",
+    loadingPoints: "Завантаження точок...",
+    unableToLoadPoints: (message) => `Не вдалося завантажити точки (${message}).`,
+    networkError: "помилка мережі",
+    noActivePoints: "Ще немає активних точок.",
+    loadingComments: "Завантаження коментарів...",
+    unableToLoadComments: (message) => `Не вдалося завантажити коментарі (${message}).`,
+    noComments: "Коментарів ще немає.",
+    popupCreated: "Створено",
+    popupUpdated: "Оновлено",
+    popupComments: "Коментарі",
+    popupShowComments: "Показати коментарі",
+    legendAriaLabel: "Легенда кольорів точок",
+    legendGreen: (maxAge) => `Зелений: створено/оновлено менше ${maxAge} тому`,
+    legendOrange: (fromAge, toAge) => `Помаранчевий: ${fromAge} - ${toAge} тому`,
+    legendRed: (fromAge, toAge) => `Червоний: ${fromAge} - ${toAge} тому`,
+    justNow: "щойно",
+    unknown: "невідомо"
+  },
+  en: {
+    pageTitle: "Community Map",
+    panelTitle: "Comments",
+    refresh: "Refresh",
+    defaultPanelStatus: "Select a marker to view comments.",
+    loadingPoints: "Loading points...",
+    unableToLoadPoints: (message) => `Unable to load points (${message}).`,
+    networkError: "network error",
+    noActivePoints: "No active points yet.",
+    loadingComments: "Loading comments...",
+    unableToLoadComments: (message) => `Unable to load comments (${message}).`,
+    noComments: "No comments yet.",
+    popupCreated: "Created",
+    popupUpdated: "Updated",
+    popupComments: "Comments",
+    popupShowComments: "Show comments",
+    legendAriaLabel: "Point color legend",
+    legendGreen: (maxAge) => `Green: created/updated less than ${maxAge} ago`,
+    legendOrange: (fromAge, toAge) => `Orange: ${fromAge} - ${toAge} ago`,
+    legendRed: (fromAge, toAge) => `Red: ${fromAge} - ${toAge} ago`,
+    justNow: "just now",
+    unknown: "unknown"
+  }
+};
+
+function normalizeLocale(rawLanguage: string | undefined): UiLocale {
+  if (!rawLanguage) return "en";
+  const normalized = rawLanguage.toLowerCase();
+  if (normalized.startsWith("uk") || normalized.startsWith("ua")) {
+    return "uk";
+  }
+  return "en";
+}
+
+function resolveUiLocale(telegramLanguage: string | undefined): UiLocale {
+  const forcedLocale = import.meta.env.VITE_UI_LOCALE as string | undefined;
+  if (forcedLocale === "uk" || forcedLocale === "en") {
+    return forcedLocale;
+  }
+  return normalizeLocale(telegramLanguage || navigator.language);
+}
+
+const telegramWebApp = window.Telegram?.WebApp;
+const uiLocale = resolveUiLocale(telegramWebApp?.initDataUnsafe?.user?.language_code);
+const uiTexts = uiTextsByLocale[uiLocale];
+const relativeTimeFormatter = new Intl.RelativeTimeFormat(uiLocale === "uk" ? "uk-UA" : "en-US", {
+  numeric: "auto"
+});
+
 const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
+const pageTitle = document.getElementById("page-title") as HTMLHeadingElement | null;
+const panelTitle = document.getElementById("panel-title") as HTMLHeadingElement | null;
+const legendSection = document.getElementById("point-color-legend") as HTMLElement | null;
 const panelStatus = document.getElementById("panel-status") as HTMLParagraphElement;
 const commentsContainer = document.getElementById("comments") as HTMLDivElement;
 const legendFreshLabel = document.getElementById("legend-fresh-label") as HTMLSpanElement | null;
 const legendMidLabel = document.getElementById("legend-mid-label") as HTMLSpanElement | null;
 const legendExpiringLabel = document.getElementById("legend-expiring-label") as HTMLSpanElement | null;
-const defaultPanelStatus = "Select a marker to view comments.";
+const defaultPanelStatus = uiTexts.defaultPanelStatus;
 const pointTtlMs = pointColorThresholds.ttlMinutes * 60_000;
 const freshThresholdMs = pointColorThresholds.greenThresholdMs;
 const midThresholdMs = pointColorThresholds.orangeThresholdMs;
 
-const telegramWebApp = window.Telegram?.WebApp;
+if (pageTitle) {
+  pageTitle.textContent = uiTexts.pageTitle;
+}
+if (panelTitle) {
+  panelTitle.textContent = uiTexts.panelTitle;
+}
+if (legendSection) {
+  legendSection.setAttribute("aria-label", uiTexts.legendAriaLabel);
+}
+refreshButton.textContent = uiTexts.refresh;
+document.title = uiTexts.pageTitle;
+document.documentElement.lang = uiLocale === "uk" ? "uk" : "en";
+
 if (telegramWebApp?.ready) {
   telegramWebApp.ready();
 }
@@ -98,10 +217,13 @@ function formatHoursAndMinutes(durationMs: number): string {
   const totalMinutes = Math.round(durationMs / 60_000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  if (minutes === 0) {
-    return `${hours}h`;
+  if (hours === 0) {
+    return uiLocale === "uk" ? `${minutes} хв` : `${minutes}m`;
   }
-  return `${hours}h ${minutes}m`;
+  if (minutes === 0) {
+    return uiLocale === "uk" ? `${hours} г` : `${hours}h`;
+  }
+  return uiLocale === "uk" ? `${hours} г ${minutes} хв` : `${hours}h ${minutes}m`;
 }
 
 function renderLegendLabels() {
@@ -112,13 +234,13 @@ function renderLegendLabels() {
   const ttlAge = formatHoursAndMinutes(pointTtlMs);
 
   if (legendFreshLabel) {
-    legendFreshLabel.textContent = `Зелений: створено/оновлено менше ${greenMaxAge} тому`;
+    legendFreshLabel.textContent = uiTexts.legendGreen(greenMaxAge);
   }
   if (legendMidLabel) {
-    legendMidLabel.textContent = `Помаранчевий: ${greenMaxAge} - ${orangeMaxAge} тому`;
+    legendMidLabel.textContent = uiTexts.legendOrange(greenMaxAge, orangeMaxAge);
   }
   if (legendExpiringLabel) {
-    legendExpiringLabel.textContent = `Червоний: ${orangeMaxAge} - ${ttlAge} тому`;
+    legendExpiringLabel.textContent = uiTexts.legendRed(orangeMaxAge, ttlAge);
   }
 }
 
@@ -126,25 +248,33 @@ renderLegendLabels();
 
 function formatElapsed(isoDate: string): string {
   const timestamp = new Date(isoDate).getTime();
-  if (!Number.isFinite(timestamp)) return "unknown";
+  if (!Number.isFinite(timestamp)) return uiTexts.unknown;
 
-  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (seconds < 60) return "just now";
+  const diffSeconds = Math.round((timestamp - Date.now()) / 1000);
+  if (Math.abs(diffSeconds) < 60) return uiTexts.justNow;
 
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} min ago`;
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (Math.abs(diffMinutes) < 60) {
+    return relativeTimeFormatter.format(diffMinutes, "minute");
+  }
 
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} h ago`;
+  const diffHours = Math.round(diffSeconds / 3_600);
+  if (Math.abs(diffHours) < 24) {
+    return relativeTimeFormatter.format(diffHours, "hour");
+  }
 
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} d ago`;
+  const diffDays = Math.round(diffSeconds / 86_400);
+  if (Math.abs(diffDays) < 30) {
+    return relativeTimeFormatter.format(diffDays, "day");
+  }
 
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months} mo ago`;
+  const diffMonths = Math.round(diffSeconds / 2_592_000);
+  if (Math.abs(diffMonths) < 12) {
+    return relativeTimeFormatter.format(diffMonths, "month");
+  }
 
-  const years = Math.floor(days / 365);
-  return `${years} y ago`;
+  const diffYears = Math.round(diffSeconds / 31_536_000);
+  return relativeTimeFormatter.format(diffYears, "year");
 }
 
 function clearCommentsPanel() {
@@ -155,12 +285,12 @@ function clearCommentsPanel() {
 }
 
 async function fetchPoints() {
-  panelStatus.textContent = "Loading points...";
+  panelStatus.textContent = uiTexts.loadingPoints;
   const response = await fetchApi("/points");
 
   if (!response.ok) {
     const message = await readApiError(response);
-    panelStatus.textContent = `Unable to load points (${message}).`;
+    panelStatus.textContent = uiTexts.unableToLoadPoints(message);
     return;
   }
 
@@ -202,12 +332,12 @@ async function fetchPoints() {
 
     const popupContent = document.createElement("div");
     popupContent.innerHTML = `
-      <strong>Created:</strong> ${formatElapsed(point.created_at)}<br />
-      <strong>Updated:</strong> ${formatElapsed(point.last_refreshed_at)}<br />
-      <strong>Comments:</strong> ${point.comments_count}<br />
+      <strong>${uiTexts.popupCreated}:</strong> ${formatElapsed(point.created_at)}<br />
+      <strong>${uiTexts.popupUpdated}:</strong> ${formatElapsed(point.last_refreshed_at)}<br />
+      <strong>${uiTexts.popupComments}:</strong> ${point.comments_count}<br />
     `;
     const button = document.createElement("button");
-    button.textContent = "Show comments";
+    button.textContent = uiTexts.popupShowComments;
     button.style.marginTop = "8px";
     button.onclick = () => {
       selectedPointId = point.id;
@@ -230,7 +360,7 @@ async function fetchPoints() {
   }
 
   if (points.length === 0) {
-    panelStatus.textContent = "No active points yet.";
+    panelStatus.textContent = uiTexts.noActivePoints;
     return;
   }
 
@@ -241,7 +371,7 @@ async function fetchPoints() {
 
 async function loadComments(pointId: number) {
   const requestedPointId = pointId;
-  panelStatus.textContent = "Loading comments...";
+  panelStatus.textContent = uiTexts.loadingComments;
   commentsContainer.hidden = false;
   commentsContainer.replaceChildren();
 
@@ -252,7 +382,7 @@ async function loadComments(pointId: number) {
 
   if (!response.ok) {
     const message = await readApiError(response);
-    panelStatus.textContent = `Unable to load comments (${message}).`;
+    panelStatus.textContent = uiTexts.unableToLoadComments(message);
     return;
   }
 
@@ -263,7 +393,7 @@ async function loadComments(pointId: number) {
   }
 
   if (comments.length === 0) {
-    panelStatus.textContent = "No comments yet.";
+    panelStatus.textContent = uiTexts.noComments;
     return;
   }
 
@@ -282,7 +412,7 @@ async function loadComments(pointId: number) {
 refreshButton.addEventListener("click", () => fetchPoints());
 
 fetchPoints().catch((error) => {
-  panelStatus.textContent = "Unable to load points.";
+  panelStatus.textContent = uiTexts.unableToLoadPoints(uiTexts.networkError);
   console.error("Failed to fetch points", error);
 });
 setInterval(() => {
