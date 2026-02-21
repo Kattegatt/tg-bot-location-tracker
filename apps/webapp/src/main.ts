@@ -37,6 +37,7 @@ const legendFreshLabel = document.getElementById("legend-fresh-label") as HTMLSp
 const legendMidLabel = document.getElementById("legend-mid-label") as HTMLSpanElement | null;
 const legendExpiringLabel = document.getElementById("legend-expiring-label") as HTMLSpanElement | null;
 const defaultPanelStatus = "Select a marker to view comments.";
+const pointTtlMs = pointColorThresholds.ttlMinutes * 60_000;
 const freshThresholdMs = pointColorThresholds.greenThresholdMs;
 const midThresholdMs = pointColorThresholds.orangeThresholdMs;
 
@@ -104,17 +105,20 @@ function formatHoursAndMinutes(durationMs: number): string {
 }
 
 function renderLegendLabels() {
-  const fresh = formatHoursAndMinutes(freshThresholdMs);
-  const mid = formatHoursAndMinutes(midThresholdMs);
+  const greenMaxAgeMs = pointTtlMs - freshThresholdMs;
+  const orangeMaxAgeMs = pointTtlMs - midThresholdMs;
+  const greenMaxAge = formatHoursAndMinutes(greenMaxAgeMs);
+  const orangeMaxAge = formatHoursAndMinutes(orangeMaxAgeMs);
+  const ttlAge = formatHoursAndMinutes(pointTtlMs);
 
   if (legendFreshLabel) {
-    legendFreshLabel.textContent = `Green: > ${fresh} left`;
+    legendFreshLabel.textContent = `Зелений: створено/оновлено менше ${greenMaxAge} тому`;
   }
   if (legendMidLabel) {
-    legendMidLabel.textContent = `Orange: ${mid} to ${fresh} left`;
+    legendMidLabel.textContent = `Помаранчевий: ${greenMaxAge} - ${orangeMaxAge} тому`;
   }
   if (legendExpiringLabel) {
-    legendExpiringLabel.textContent = `Red: < ${mid} left`;
+    legendExpiringLabel.textContent = `Червоний: ${orangeMaxAge} - ${ttlAge} тому`;
   }
 }
 
