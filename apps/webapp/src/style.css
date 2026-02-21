@@ -1,6 +1,11 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
+  --safe-top: max(
+    env(safe-area-inset-top, 0px),
+    var(--tg-safe-area-inset-top, 0px),
+    var(--tg-content-safe-area-inset-top, 0px)
+  );
   color-scheme: light;
   font-family: "Space Grotesk", system-ui, sans-serif;
   background: radial-gradient(circle at top left, #f1f5ff, #f8f9ff 45%, #fef7f2 100%);
@@ -13,8 +18,11 @@ body {
 
 #app {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  padding-top: var(--safe-top);
+  box-sizing: border-box;
 }
 
 .topbar {
