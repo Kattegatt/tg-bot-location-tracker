@@ -45,8 +45,23 @@ function resolveDefaultApiUrl(): string {
   return `${protocol}//${host}`;
 }
 
+function parsePositiveEnvNumber(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
 const apiUrl = import.meta.env.VITE_API_URL || resolveDefaultApiUrl();
 const devInitData = import.meta.env.VITE_DEV_INIT_DATA as string | undefined;
+const telegramMobileTopInsetFallback = parsePositiveEnvNumber(
+  import.meta.env.VITE_TG_MOBILE_TOP_INSET_PX as string | undefined,
+  56
+);
+const telegramIosTopInsetFallback = parsePositiveEnvNumber(
+  import.meta.env.VITE_TG_IOS_TOP_INSET_PX as string | undefined,
+  72
+);
 
 type UiLocale = "uk" | "en";
 
@@ -163,7 +178,10 @@ function applyTelegramTopInset() {
   const contentSafeTop = readInsetValue(telegramWebApp.contentSafeAreaInset?.top);
   const reportedTop = Math.max(safeTop, contentSafeTop);
   const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const mobileFallbackTop = window.innerWidth <= 900 ? (isIOSDevice ? 72 : 56) : 0;
+  const mobileFallbackTop =
+    window.innerWidth <= 900
+      ? (isIOSDevice ? telegramIosTopInsetFallback : telegramMobileTopInsetFallback)
+      : 0;
   const effectiveTop = Math.max(reportedTop, mobileFallbackTop);
 
   document.documentElement.style.setProperty("--tg-runtime-safe-top", `${effectiveTop}px`);
