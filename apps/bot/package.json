@@ -7,6 +7,7 @@
     "dev": "tsx watch src/bot.ts",
     "build": "tsup src/bot.ts --format esm --dts",
     "start": "node dist/bot.js",
+    "start:prod": "tsx src/bot.ts",
     "test": "vitest",
     "lint": "tsc --noEmit"
   },

@@ -10,6 +10,8 @@ coverage/
 
 # env files
 .env
+.env.prod
+.env.*.local
 apps/*/.env
 packages/*/.env
 !.env.example
@@ -31,5 +33,6 @@ tmp/
 
 # vite/vitest caches
 .vite/
+webapp-dist/
 
 SPEC.md

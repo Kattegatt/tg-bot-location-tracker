@@ -1,0 +1,16 @@
+.git
+.gitignore
+node_modules
+**/node_modules
+dist
+**/dist
+.env
+.env.*
+!.env.example
+!.env.example.prod
+apps/*/.env
+webapp-dist
+coverage
+*.log
+.DS_Store
+

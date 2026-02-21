@@ -1,0 +1,19 @@
+api.communitymap.website {
+  log {
+    output stdout
+    format console
+  }
+  reverse_proxy api:3001
+}
+
+app.communitymap.website {
+  log {
+    output stdout
+    format console
+  }
+  root * /srv/webapp
+  encode gzip zstd
+  try_files {path} /index.html
+  file_server
+}
+
