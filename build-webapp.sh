@@ -23,8 +23,14 @@ fi
 
 npm -w apps/webapp run build
 
-rm -rf webapp-dist
+# Keep webapp-dist directory inode stable because it is bind-mounted into Caddy.
+# Replacing only contents avoids stale mount edge-cases after deploy.
 mkdir -p webapp-dist
-cp -R apps/webapp/dist/. webapp-dist/
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --delete apps/webapp/dist/ webapp-dist/
+else
+  find webapp-dist -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+  cp -R apps/webapp/dist/. webapp-dist/
+fi
 
 echo "WebApp build prepared in $ROOT_DIR/webapp-dist (VITE_API_URL=${VITE_API_URL:-auto})"

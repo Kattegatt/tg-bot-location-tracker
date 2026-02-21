@@ -16,6 +16,9 @@ git reset --hard "origin/${DEPLOY_BRANCH}"
 export WEBAPP_CACHE_BUST="$(git rev-parse --short HEAD)"
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 
+# Ensure Caddy re-reads mount and config after static rebuild.
+docker compose --env-file .env.prod -f docker-compose.prod.yml restart caddy
+
 # Optional, non-blocking migration step.
 docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T api npm run db:migrate || true
 
