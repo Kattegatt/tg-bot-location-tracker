@@ -33,6 +33,7 @@ Set real values in `.env.prod`:
 - `ADMIN_TOKEN`
 - `INITDATA_MAX_AGE_SECONDS`
 - optionally override `APP_DOMAIN`, `API_DOMAIN`
+- optional `VITE_API_URL` (otherwise frontend build uses `https://${API_DOMAIN}`)
 
 Never commit `.env.prod`.
 
@@ -71,4 +72,3 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml down
   - `api.communitymap.website` -> `api:3001`
   - `app.communitymap.website` -> static files from `webapp-dist`
 - HTTPS certificates are managed automatically by Caddy (Let's Encrypt).
-

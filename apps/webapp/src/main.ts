@@ -12,7 +12,20 @@ declare global {
   }
 }
 
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+function resolveDefaultApiUrl(): string {
+  if (import.meta.env.DEV) {
+    return "http://localhost:3001";
+  }
+
+  const { protocol, hostname, host } = window.location;
+  if (hostname.startsWith("app.")) {
+    return `${protocol}//api.${hostname.slice(4)}`;
+  }
+
+  return `${protocol}//${host}`;
+}
+
+const apiUrl = import.meta.env.VITE_API_URL || resolveDefaultApiUrl();
 const devInitData = import.meta.env.VITE_DEV_INIT_DATA as string | undefined;
 const initData = window.Telegram?.WebApp?.initData || devInitData || "";
 

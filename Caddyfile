@@ -1,19 +1,29 @@
 api.communitymap.website {
-  log {
-    output stdout
-    format console
-  }
-  reverse_proxy api:3001
+    log {
+        output stdout
+        format console
+    }
+
+    reverse_proxy api:3001
 }
 
 app.communitymap.website {
-  log {
-    output stdout
-    format console
-  }
-  root * /srv/webapp
-  encode gzip zstd
-  try_files {path} /index.html
-  file_server
-}
+    log {
+        output stdout
+        format console
+    }
 
+    # Все, що схоже на API, шлемо на бекенд
+    @api path /points* /members* /health* /debug* 
+    handle @api {
+        reverse_proxy api:3001
+    }
+
+    # Все інше — статика webapp
+    handle {
+        root * /srv/webapp
+        encode gzip zstd
+        try_files {path} /index.html
+        file_server
+    }
+}
