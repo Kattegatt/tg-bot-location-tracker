@@ -8,9 +8,22 @@
   <body>
     <div id="app">
       <header class="topbar">
-        <div>
+        <div class="topbar-info">
           <h1>Community Map</h1>
-          <p>Active points expire after 5 hours.</p>
+          <section class="topbar-legend" aria-label="Point color legend">
+            <div class="legend-item">
+              <span class="legend-dot legend-dot-fresh"></span>
+              <span id="legend-fresh-label"></span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot legend-dot-mid"></span>
+              <span id="legend-mid-label"></span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot legend-dot-expiring"></span>
+              <span id="legend-expiring-label"></span>
+            </div>
+          </section>
         </div>
         <button id="refresh">Refresh</button>
       </header>
@@ -18,21 +31,6 @@
         <section id="map"></section>
         <aside id="panel">
           <h2>Comments</h2>
-          <section class="legend" aria-label="Point color legend">
-            <p class="legend-title">Point status by color</p>
-            <div class="legend-item">
-              <span class="legend-dot legend-dot-fresh"></span>
-              <span>Fresh update (more time left)</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot legend-dot-mid"></span>
-              <span>Mid lifetime</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot legend-dot-expiring"></span>
-              <span>Expiring soon</span>
-            </div>
-          </section>
           <p id="panel-status">Select a marker to view comments.</p>
           <div id="comments"></div>
         </aside>

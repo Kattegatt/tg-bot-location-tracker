@@ -1,5 +1,6 @@
 import L from "leaflet";
 import "./style.css";
+import { pointColorThresholds } from "./config";
 
 declare global {
   interface Window {
@@ -32,7 +33,12 @@ const devInitData = import.meta.env.VITE_DEV_INIT_DATA as string | undefined;
 const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
 const panelStatus = document.getElementById("panel-status") as HTMLParagraphElement;
 const commentsContainer = document.getElementById("comments") as HTMLDivElement;
+const legendFreshLabel = document.getElementById("legend-fresh-label") as HTMLSpanElement | null;
+const legendMidLabel = document.getElementById("legend-mid-label") as HTMLSpanElement | null;
+const legendExpiringLabel = document.getElementById("legend-expiring-label") as HTMLSpanElement | null;
 const defaultPanelStatus = "Select a marker to view comments.";
+const freshThresholdMs = pointColorThresholds.greenThresholdMs;
+const midThresholdMs = pointColorThresholds.orangeThresholdMs;
 
 const telegramWebApp = window.Telegram?.WebApp;
 if (telegramWebApp?.ready) {
@@ -82,11 +88,37 @@ async function readApiError(response: Response): Promise<string> {
 function ttlColor(expiresAt: string) {
   const expires = new Date(expiresAt).getTime();
   const remaining = expires - Date.now();
-  const ratio = Math.max(0, Math.min(1, remaining / (5 * 60 * 60 * 1000)));
-  if (ratio > 0.66) return "#16a34a";
-  if (ratio > 0.33) return "#f59e0b";
+  if (remaining > freshThresholdMs) return "#16a34a";
+  if (remaining > midThresholdMs) return "#f59e0b";
   return "#ef4444";
 }
+
+function formatHoursAndMinutes(durationMs: number): string {
+  const totalMinutes = Math.round(durationMs / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${minutes}m`;
+}
+
+function renderLegendLabels() {
+  const fresh = formatHoursAndMinutes(freshThresholdMs);
+  const mid = formatHoursAndMinutes(midThresholdMs);
+
+  if (legendFreshLabel) {
+    legendFreshLabel.textContent = `Green: > ${fresh} left`;
+  }
+  if (legendMidLabel) {
+    legendMidLabel.textContent = `Orange: ${mid} to ${fresh} left`;
+  }
+  if (legendExpiringLabel) {
+    legendExpiringLabel.textContent = `Red: < ${mid} left`;
+  }
+}
+
+renderLegendLabels();
 
 function formatElapsed(isoDate: string): string {
   const timestamp = new Date(isoDate).getTime();
