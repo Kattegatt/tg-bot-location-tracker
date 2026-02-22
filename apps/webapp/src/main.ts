@@ -162,6 +162,8 @@ const uiTexts = uiTextsByLocale[uiLocale];
 const relativeTimeFormatter = new Intl.RelativeTimeFormat(uiLocale === "uk" ? "uk-UA" : "en-US", {
   numeric: "auto"
 });
+const defaultMapCenter: [number, number] = [16.0544, 108.2022]; // Da Nang
+const defaultMapZoom = 12;
 
 function readInsetValue(value: number | undefined): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
@@ -226,7 +228,7 @@ if (telegramWebApp?.ready) {
   telegramWebApp.ready();
 }
 
-const map = L.map("map").setView([50.4501, 30.5234], 12);
+const map = L.map("map").setView(defaultMapCenter, defaultMapZoom);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
 }).addTo(map);
@@ -239,7 +241,9 @@ navigator.geolocation?.getCurrentPosition(
   (pos) => {
     map.setView([pos.coords.latitude, pos.coords.longitude], 13);
   },
-  () => {}
+  () => {
+    map.setView(defaultMapCenter, defaultMapZoom);
+  }
 );
 
 const markers = new Map<number, any>();
