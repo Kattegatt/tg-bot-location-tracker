@@ -60,15 +60,6 @@ body {
   color: #42506f;
 }
 
-.topbar button {
-  background: #14213d;
-  color: #fff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
 main {
   flex: 1;
   display: grid;

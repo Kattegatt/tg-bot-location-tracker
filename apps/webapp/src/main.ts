@@ -62,13 +62,16 @@ const telegramIosTopInsetFallback = parsePositiveEnvNumber(
   import.meta.env.VITE_TG_IOS_TOP_INSET_PX as string | undefined,
   72
 );
+const telegramTopBarHeight = parsePositiveEnvNumber(
+  import.meta.env.VITE_TG_TOP_BAR_HEIGHT_PX as string | undefined,
+  52
+);
 
 type UiLocale = "uk" | "en";
 
 type UiTextSet = {
   pageTitle: string;
   panelTitle: string;
-  refresh: string;
   defaultPanelStatus: string;
   loadingPoints: string;
   unableToLoadPoints: (message: string) => string;
@@ -93,7 +96,6 @@ const uiTextsByLocale: Record<UiLocale, UiTextSet> = {
   uk: {
     pageTitle: "Community Map",
     panelTitle: "Коментарі",
-    refresh: "Оновити",
     defaultPanelStatus: "Оберіть точку, щоб переглянути коментарі.",
     loadingPoints: "Завантаження точок...",
     unableToLoadPoints: (message) => `Не вдалося завантажити точки (${message}).`,
@@ -116,7 +118,6 @@ const uiTextsByLocale: Record<UiLocale, UiTextSet> = {
   en: {
     pageTitle: "Community Map",
     panelTitle: "Comments",
-    refresh: "Refresh",
     defaultPanelStatus: "Select a marker to view comments.",
     loadingPoints: "Loading points...",
     unableToLoadPoints: (message) => `Unable to load points (${message}).`,
@@ -177,17 +178,17 @@ function applyTelegramTopInset() {
   const safeTop = readInsetValue(telegramWebApp.safeAreaInset?.top);
   const contentSafeTop = readInsetValue(telegramWebApp.contentSafeAreaInset?.top);
   const reportedTop = Math.max(safeTop, contentSafeTop);
+  const safeAwareTop = reportedTop > 0 ? reportedTop + telegramTopBarHeight : 0;
   const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const mobileFallbackTop =
-    window.innerWidth <= 900
-      ? (isIOSDevice ? telegramIosTopInsetFallback : telegramMobileTopInsetFallback)
-      : 0;
-  const effectiveTop = Math.max(reportedTop, mobileFallbackTop);
+  const isMobileLikeDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
+  const mobileFallbackTop = isMobileLikeDevice
+    ? (isIOSDevice ? telegramIosTopInsetFallback : telegramMobileTopInsetFallback)
+    : 0;
+  const effectiveTop = Math.max(safeAwareTop, mobileFallbackTop);
 
   document.documentElement.style.setProperty("--tg-runtime-safe-top", `${effectiveTop}px`);
 }
 
-const refreshButton = document.getElementById("refresh") as HTMLButtonElement;
 const pageTitle = document.getElementById("page-title") as HTMLHeadingElement | null;
 const panelTitle = document.getElementById("panel-title") as HTMLHeadingElement | null;
 const legendSection = document.getElementById("point-color-legend") as HTMLElement | null;
@@ -210,7 +211,6 @@ if (panelTitle) {
 if (legendSection) {
   legendSection.setAttribute("aria-label", uiTexts.legendAriaLabel);
 }
-refreshButton.textContent = uiTexts.refresh;
 document.title = uiTexts.pageTitle;
 document.documentElement.lang = uiLocale === "uk" ? "uk" : "en";
 if (telegramWebApp) {
@@ -469,8 +469,6 @@ async function loadComments(pointId: number) {
     commentsContainer.appendChild(div);
   }
 }
-
-refreshButton.addEventListener("click", () => fetchPoints());
 
 fetchPoints().catch((error) => {
   panelStatus.textContent = uiTexts.unableToLoadPoints(uiTexts.networkError);
