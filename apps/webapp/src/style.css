@@ -130,6 +130,13 @@ main {
   background: #f4f6fb;
   font-size: 13px;
   line-height: 1.25;
+  overflow: hidden;
+}
+
+.comment div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .comment time {
